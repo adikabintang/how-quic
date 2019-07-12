@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 
     handle = pcap_open_live(device, snapshot_length, 0, 10000, error_buffer);
     if (handle == NULL) {
-        log_fatal("could not open device %s: %s\n", device, error_buffer);
+        log_fatal("could not open device %s: %s", device, error_buffer);
         return 2;
     }
     
