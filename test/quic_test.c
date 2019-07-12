@@ -1,30 +1,17 @@
-/*
-TODO: this should be a unit test with cmocka. not like this.
- */
+#include <criterion/criterion.h>
 
-#include <stdio.h>
-#include <inttypes.h>
 #include "quic.h"
 
-int main()
-{
-    uint64_t x;
-    // test cases: https://tools.ietf.org/html/draft-ietf-quic-transport-20#section-16
+Test(decode_var_len_int, test) {
     u_char header_field[] = {0x25};
-    x = decode_var_len_int(header_field);
-    printf("%" PRIu64 "\n", x);
-    
+    cr_assert(decode_var_len_int(header_field) == 37);
 
     u_char header_field_1[] = {0x7b, 0xbd};
-    x = decode_var_len_int(header_field_1);
-    printf("%" PRIu64 "\n", x);
+    cr_assert(decode_var_len_int(header_field_1) == 15293);
 
     u_char header_field_2[] = {0x9d, 0x7f, 0x3e, 0x7d};
-    x = decode_var_len_int(header_field_2);
-    printf("%" PRIu64 "\n", x);
+    cr_assert(decode_var_len_int(header_field_2) == 494878333);
 
     u_char header_field_3[] = {0xc2, 0x19, 0x7c, 0x5e, 0xff, 0x14, 0xe8, 0x8c};
-    x = decode_var_len_int(header_field_3);
-    printf("%" PRIu64 "\n", x);
-    return 0;
+    cr_assert(decode_var_len_int(header_field_3) == 151288809941952652);
 }

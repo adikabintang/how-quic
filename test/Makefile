@@ -1,3 +1,3 @@
 .PHONY: quic_test.out
 quic_test:
-	gcc -I../include -o quic_test.out quic_test.c ../src/quic.c -lpcap
+	gcc -o quic_test.out ../src/quic.c test_quic.c -I../include -lcriterion
