@@ -6,6 +6,7 @@ Written in C with libpcap library.
 
 **warning**: To anyone who sees this, please note this project is written with *learning* goal, not *production* goal.
 
-Prerequisite:
+Dependencies:
 1. [libpcap](https://www.tcpdump.org/)
-2. [Criterion unit test](https://github.com/Snaipe/Criterion)
+2. [log.c](https://github.com/rxi/log.c)
+3. [Criterion unit test](https://github.com/Snaipe/Criterion)
