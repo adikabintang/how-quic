@@ -38,13 +38,7 @@ typedef struct udp_header {
     u_short crc;
 } udp_header;
 
-void udp_basic_handler(
-    u_char *args,
-    const struct pcap_pkthdr *header,
-    const u_char *packet
-);
-
-void udp_handler_v2(
+void udp_handler(
     u_char *args,
     const struct pcap_pkthdr *header,
     const u_char *packet

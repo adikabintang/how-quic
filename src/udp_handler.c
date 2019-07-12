@@ -3,69 +3,7 @@
 #include <netinet/if_ether.h>
 #include <time.h>
 
-void udp_basic_handler(
-    u_char *args,
-    const struct pcap_pkthdr *header,
-    const u_char *packet
-)
-{
-    struct ether_header *eth_hdr;
-    eth_hdr = (struct ether_header *)packet;
-    if (ntohs(eth_hdr->ether_type) != ETHERTYPE_IP) {
-        printf("not an ip packet, skipping\n");
-        return;
-    }
-
-    printf("total packet available: %d bytes\n", header->caplen);
-    printf("expected packet size: %d bytes\n", header->len);
-
-    const u_char *ip_header;
-    const u_char *tcp_header;
-    const u_char *payload;
-
-    // header lengths in bytes
-    int ethernet_header_length = 14;
-    int ip_header_length;
-    int tcp_header_length;
-    int payload_length;
-
-    // find the start of IP header
-    ip_header = packet + ethernet_header_length;
-
-    ip_header_length = ((*ip_header) & 0x0F);
-    ip_header_length = ip_header_length * 4;
-
-    u_char protocol = *(ip_header + 9);
-    if (protocol != IPPROTO_TCP) {
-        printf("not a tcp packet, return\n");
-        return;
-    }
-
-    tcp_header = packet + ethernet_header_length + ip_header_length;
-
-    tcp_header_length = (*(tcp_header + 12) & 0xF0) >> 4;
-    tcp_header_length = tcp_header_length * 4;
-
-    int total_headers_size = ethernet_header_length + ip_header_length
-        + tcp_header_length;
-    
-    payload_length = header->caplen - (total_headers_size);
-
-    payload = packet + total_headers_size;
-
-    // print payload in ASCII
-    if (payload_length > 0) {
-        const u_char *temp_pointer = payload;
-        int byte_count = 0;
-        while (byte_count++ < payload_length) {
-            printf("%c", *temp_pointer);
-            temp_pointer++;
-        }
-        printf("\n");
-    }
-}
-
-void udp_handler_v2(
+void udp_handler(
     u_char *args,
     const struct pcap_pkthdr *header,
     const u_char *packet

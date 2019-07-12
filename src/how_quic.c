@@ -19,6 +19,6 @@ int main(int argc, char *argv[])
         return 2;
     }
     
-    pcap_loop(handle, total_packet_count, udp_handler_v2, NULL);
+    pcap_loop(handle, total_packet_count, udp_handler, NULL);
     return 0;
 }
