@@ -2,6 +2,7 @@
 #include <pcap.h>
 
 #include "udp_handler.h"
+#include "log.h"
 
 int main(int argc, char *argv[])
 {
@@ -15,7 +16,7 @@ int main(int argc, char *argv[])
 
     handle = pcap_open_live(device, snapshot_length, 0, 10000, error_buffer);
     if (handle == NULL) {
-        fprintf(stderr, "could not open device %s: %s\n", device, error_buffer);
+        log_fatal("could not open device %s: %s\n", device, error_buffer);
         return 2;
     }
     
