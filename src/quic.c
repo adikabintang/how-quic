@@ -33,7 +33,7 @@ uint64_t decode_var_len_int(u_char *header_field)
     usable_bit -= 6;
     
     while (usable_bit > 0) {
-        value = (value << 8) & 0xFFFFFFFFFFFFFFFF;
+        value = (value << 8);
         hdr_pointer++;
         value |= *hdr_pointer;
         usable_bit -= 8;
