@@ -16,7 +16,8 @@ typedef struct quic_initial_packet {
 } quic_initial_packet;
 
 // https://tools.ietf.org/html/draft-ietf-quic-transport-20#section-16
-uint64_t decode_var_len_int(u_char *header_field);
+uint64_t quic_decode_var_len_int(u_char *header_field);
+void quic_parse_header(const u_char *udp_payload);
 
 /*
 self note

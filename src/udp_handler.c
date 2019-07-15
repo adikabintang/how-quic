@@ -3,6 +3,7 @@
 #include <netinet/if_ether.h>
 #include <time.h>
 #include "log.h"
+#include "quic.h"
 
 void udp_handler(
     u_char *args,
@@ -14,7 +15,6 @@ void udp_handler(
     struct tm ltime;
     char timestr[16];
 
-
     struct ether_header *eth_hdr;
     ip_header *ip_hdr;
     eth_hdr = (struct ether_header *)packet;
@@ -22,10 +22,6 @@ void udp_handler(
         log_debug("not an ip packet, skipping");
         return;
     }
-
-    // const u_char *ip_header;
-    const u_char *tcp_header;
-    const u_char *payload;
 
     // header lengths in bytes
     int ethernet_header_length = 14;
@@ -60,13 +56,20 @@ void udp_handler(
         ip_hdr->daddr.byte3,
         ip_hdr->daddr.byte4,
         dst_port);
-
-    local_tv_sec = header->ts.tv_sec;
-    log_debug("%lld.%.9ld", (long long)header->ts.tv_sec, header->ts.tv_usec);
-
-    /* print timestamp and length of the packet */
-    log_debug("total packet available: %d bytes", header->caplen);
-    log_debug("expected packet size: %d bytes", header->len);
     
-    log_debug("real_length: %d", datagram_length);
+    if (dst_port == 4433)
+    {
+        local_tv_sec = header->ts.tv_sec;
+        log_debug("%lld.%.9ld", (long long)header->ts.tv_sec, 
+            header->ts.tv_usec);
+
+        /* print timestamp and length of the packet */
+        log_debug("total packet available: %d bytes", header->caplen);
+        log_debug("expected packet size: %d bytes", header->len);
+        
+        log_debug("real_length: %d bytes", datagram_length);
+        log_debug("udp payload_length: %d bytes\n", datagram_length - 8);
+        quic_parse_header(packet + ethernet_header_length 
+            + ip_header_length + 8);
+    }
 }
