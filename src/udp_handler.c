@@ -57,7 +57,7 @@ void udp_handler(
         ip_hdr->daddr.byte4,
         dst_port);
     
-    if (dst_port == 4433)
+    if (dst_port == 4433 || src_port == 4433)
     {
         local_tv_sec = header->ts.tv_sec;
         log_debug("%lld.%.9ld", (long long)header->ts.tv_sec, 
@@ -68,8 +68,8 @@ void udp_handler(
         log_debug("expected packet size: %d bytes", header->len);
         
         log_debug("real_length: %d bytes", datagram_length);
-        log_debug("udp payload_length: %d bytes\n", datagram_length - 8);
+        log_debug("udp payload_length: %d bytes", datagram_length - 8);
         quic_parse_header(packet + ethernet_header_length 
-            + ip_header_length + 8);
+            + ip_header_length + 8, datagram_length - 8);
     }
 }

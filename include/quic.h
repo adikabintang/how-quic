@@ -7,17 +7,22 @@
 // initial packet
 // https://tools.ietf.org/html/draft-ietf-quic-transport-20#section-17.2.2
 
-typedef struct quic_initial_packet {
-    u_char first_eight;
-    uint16_t version;
+typedef struct quic_long_header {
+    u_char first_header;
+    u_int version;
     u_char dcil_scil;
-    u_char *dst_conn_id;
-    u_char *src_conn_id;
-} quic_initial_packet;
+    // u_char *dst_conn_id;
+    // u_char *src_conn_id;
+} quic_long_header;
+
+typedef struct decode_var_len_data {
+    u_char excessive_usable_bit;
+    uint64_t value;
+} decode_var_len_data;
 
 // https://tools.ietf.org/html/draft-ietf-quic-transport-20#section-16
-uint64_t quic_decode_var_len_int(u_char *header_field);
-void quic_parse_header(const u_char *udp_payload);
+decode_var_len_data quic_decode_var_len_int(u_char *header_field);
+void quic_parse_header(const u_char *udp_payload, unsigned int payload_length);
 
 /*
 self note

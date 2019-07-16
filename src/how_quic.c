@@ -6,13 +6,14 @@
 
 int main(int argc, char *argv[])
 {
+    log_set_level(4);
     char *device = argc > 1 ? argv[1] : "lo";
     char error_buffer[PCAP_ERRBUF_SIZE];
     pcap_t *handle;
     int snapshot_length = 1024;
 
     // end the loop after this many packets are captured
-    int total_packet_count = 5;
+    int total_packet_count = 13;
 
     handle = pcap_open_live(device, snapshot_length, 0, 10000, error_buffer);
     if (handle == NULL) {
