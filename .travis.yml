@@ -7,8 +7,8 @@ addons:
   apt:
     update: true
     sources:
-      - ubuntu-toolchain-r-test
+      # - ubuntu-toolchain-r-test
       - ppa:snaipewastaken/ppa
     packages:
-      - criterion-dev
+      # - criterion-dev
       - libpcap-dev
