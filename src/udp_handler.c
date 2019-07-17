@@ -15,6 +15,10 @@ void udp_handler(
     struct tm ltime;
     char timestr[16];
 
+    filter_server *filter = (filter_server *)args;
+    log_debug(" server ip: %s", filter->server_ip);
+    log_debug(" server port: %s", filter->server_port);
+
     struct ether_header *eth_hdr;
     ip_header *ip_hdr;
     eth_hdr = (struct ether_header *)packet;
