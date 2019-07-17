@@ -2,8 +2,8 @@
 #include "log.h"
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
-#include <time.h>       /* time_t, time (for timestamp in second) */
-#include <sys/timeb.h>  /* ftime, timeb (for timestamp in millisecond) */
+#include <time.h>      /* time_t, time (for timestamp in second) */
+#include <sys/timeb.h> /* ftime, timeb (for timestamp in millisecond) */
 
 #define QUIC_INITIAL_PACKET 0x0
 #define QUIC_ZERO_RTT_PACKET 0x1
@@ -87,20 +87,26 @@ void quic_parse_header(const u_char *udp_payload, unsigned int payload_length)
             log_error(" spinbit: %d", spin_bit);
             struct timeb timer_msec;
             long long int timestamp_msec; /* timestamp in millisecond. */
-            if (!ftime(&timer_msec)) {
-                timestamp_msec = ((long long int) timer_msec.time) * 1000ll + 
-                                    (long long int) timer_msec.millitm;
+            if (!ftime(&timer_msec))
+            {
+                timestamp_msec = ((long long int)timer_msec.time) * 1000ll +
+                                 (long long int)timer_msec.millitm;
             }
-            else {
+            else
+            {
                 timestamp_msec = -1;
             }
             log_error("timstamp %lld ms", timestamp_msec);
-            if (g_spinbit == 0xff) {
+            if (g_spinbit == 0xff)
+            {
                 g_spinbit = spin_bit;
                 g_timestamp_msec = timestamp_msec;
                 return;
-            } else {
-                if (g_spinbit != spin_bit) {
+            }
+            else
+            {
+                if (g_spinbit != spin_bit)
+                {
                     g_spinbit = spin_bit;
                     long long int rtt = timestamp_msec - g_timestamp_msec;
                     g_timestamp_msec = timestamp_msec;
@@ -159,35 +165,29 @@ void quic_parse_header(const u_char *udp_payload, unsigned int payload_length)
             var_len = quic_decode_var_len_int(token_length_hdr);
 
             log_debug(" quic: token length: %d", var_len.value);
-            counter_pointer += (
-                (var_len.excessive_usable_bit - 6) / 8
-            );
+            counter_pointer += ((var_len.excessive_usable_bit - 6) / 8);
 
             // go through the token
             counter_pointer += var_len.value;
 
             u_char *length_hdr = (u_char *)udp_payload + counter_pointer;
             counter_pointer++;
-            
+
             var_len = quic_decode_var_len_int(length_hdr);
-            counter_pointer += (
-                (var_len.excessive_usable_bit - 6) / 8
-            );
-            
+            counter_pointer += ((var_len.excessive_usable_bit - 6) / 8);
+
             log_debug(" quic: length: %d", var_len.value);
             counter_pointer += var_len.value;
         }
-        else if (long_packet_type == QUIC_ZERO_RTT_PACKET || 
-            long_packet_type == QUIC_HANDSHAKE_PACKET)
+        else if (long_packet_type == QUIC_ZERO_RTT_PACKET ||
+                 long_packet_type == QUIC_HANDSHAKE_PACKET)
         {
             u_char *length_hdr = (u_char *)udp_payload + counter_pointer;
             counter_pointer++;
-            
+
             var_len = quic_decode_var_len_int(length_hdr);
             log_debug(" quic: length: %d", var_len.value);
-            counter_pointer += (
-                (var_len.excessive_usable_bit - 6) / 8
-            );
+            counter_pointer += ((var_len.excessive_usable_bit - 6) / 8);
 
             counter_pointer += var_len.value;
         }
