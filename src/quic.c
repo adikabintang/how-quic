@@ -4,6 +4,7 @@
 #include <netinet/if_ether.h>
 #include <time.h>      /* time_t, time (for timestamp in second) */
 #include <sys/timeb.h> /* ftime, timeb (for timestamp in millisecond) */
+#include <sys/time.h>   // gettimeofday, timeval (for timestamp in microsecond)
 
 #define QUIC_INITIAL_PACKET 0x0
 #define QUIC_ZERO_RTT_PACKET 0x1
@@ -13,33 +14,24 @@
 u_char g_spinbit = 0xff;
 long long int g_timestamp_msec;
 
-/*
-must be host format. use ntohs() to convert.
- */
 decode_var_len_data quic_decode_var_len_int(u_char *header_field)
 {
     uint8_t var_len = 0;
-    uint64_t value = 0;
-    uint8_t usable_bit = 0;
     decode_var_len_data result;
 
     var_len = (*header_field & 0b11000000) >> 6;
     switch (var_len)
     {
     case 0b00:
-        usable_bit = 6;
         result.excessive_usable_bit = 6;
         break;
     case 0b01:
-        usable_bit = 14;
         result.excessive_usable_bit = 14;
         break;
     case 0b10:
-        usable_bit = 30;
         result.excessive_usable_bit = 30;
         break;
     case 0b11:
-        usable_bit = 62;
         result.excessive_usable_bit = 62;
         break;
     default:
@@ -47,17 +39,17 @@ decode_var_len_data quic_decode_var_len_int(u_char *header_field)
     }
 
     u_char *hdr_pointer = header_field;
-    value = *hdr_pointer & 0b00111111;
-    usable_bit -= 6;
-
-    while (usable_bit > 0)
+    result.value = *hdr_pointer & 0b00111111;
+    result.excessive_usable_bit -= 6;
+    
+    while (result.excessive_usable_bit > 0)
     {
-        value = (value << 8);
+        result.value = (result.value << 8);
         hdr_pointer++;
-        value |= *hdr_pointer;
-        usable_bit -= 8;
+        result.value |= *hdr_pointer;
+        result.excessive_usable_bit -= 8;
     }
-    result.value = value;
+
     return result;
 }
 
@@ -111,6 +103,10 @@ void quic_parse_header(const u_char *udp_payload, unsigned int payload_length)
                     long long int rtt = timestamp_msec - g_timestamp_msec;
                     g_timestamp_msec = timestamp_msec;
                     log_error("rtt: %lld ms", rtt);
+                }
+                else
+                {
+                    log_error("same spinbit");
                 }
             }
             log_error("---\n");
