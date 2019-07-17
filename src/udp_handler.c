@@ -45,7 +45,7 @@ void udp_handler(
     u_short dst_port = ntohs(udp_hdr->dst_port);
     u_short datagram_length = ntohs(udp_hdr->len);
 
-    log_debug("%d.%d.%d.%d:%d -> %d.%d.%d.%d:%d",
+    log_error("%d.%d.%d.%d:%d -> %d.%d.%d.%d:%d",
         ip_hdr->saddr.byte1,
         ip_hdr->saddr.byte2,
         ip_hdr->saddr.byte3,
@@ -60,7 +60,7 @@ void udp_handler(
     if (dst_port == 4433 || src_port == 4433)
     {
         local_tv_sec = header->ts.tv_sec;
-        log_debug("%lld.%.9ld", (long long)header->ts.tv_sec, 
+        log_error("%lld.%.9ld", (long long)header->ts.tv_sec, 
             header->ts.tv_usec);
 
         /* print timestamp and length of the packet */
