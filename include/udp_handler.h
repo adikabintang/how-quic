@@ -11,6 +11,11 @@ typedef struct ip_address {
     u_char byte4;
 } ip_address;
 
+typedef struct filter_server {
+    char *server_ip;
+    char *server_port;
+} filter_server;
+
 /* IPv4 header */
 typedef struct ip_header {
     u_char  ver_ihl;        // Version (4 bits) + Internet header length (4 bits)
