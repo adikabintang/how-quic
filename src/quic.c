@@ -13,25 +13,32 @@
 
 u_char g_spinbit = 0xff;
 long long int g_timestamp_msec;
+long long int g_timestamp_usec;
 
 decode_var_len_data quic_decode_var_len_int(u_char *header_field)
 {
     uint8_t var_len = 0;
+    uint64_t value = 0;
+    uint8_t usable_bit = 0;
     decode_var_len_data result;
 
     var_len = (*header_field & 0b11000000) >> 6;
     switch (var_len)
     {
     case 0b00:
+        usable_bit = 6;
         result.excessive_usable_bit = 6;
         break;
     case 0b01:
+        usable_bit = 14;
         result.excessive_usable_bit = 14;
         break;
     case 0b10:
+        usable_bit = 30;
         result.excessive_usable_bit = 30;
         break;
     case 0b11:
+        usable_bit = 62;
         result.excessive_usable_bit = 62;
         break;
     default:
@@ -39,17 +46,17 @@ decode_var_len_data quic_decode_var_len_int(u_char *header_field)
     }
 
     u_char *hdr_pointer = header_field;
-    result.value = *hdr_pointer & 0b00111111;
-    result.excessive_usable_bit -= 6;
-    
-    while (result.excessive_usable_bit > 0)
-    {
-        result.value = (result.value << 8);
-        hdr_pointer++;
-        result.value |= *hdr_pointer;
-        result.excessive_usable_bit -= 8;
-    }
+    value = *hdr_pointer & 0b00111111;
+    usable_bit -= 6;
 
+    while (usable_bit > 0)
+    {
+        value = (value << 8);
+        hdr_pointer++;
+        value |= *hdr_pointer;
+        usable_bit -= 8;
+    }
+    result.value = value;
     return result;
 }
 
@@ -82,27 +89,42 @@ void quic_parse_header(const u_char *udp_payload, unsigned int payload_length)
             if (!ftime(&timer_msec))
             {
                 timestamp_msec = ((long long int)timer_msec.time) * 1000ll +
-                                 (long long int)timer_msec.millitm;
+                    (long long int)timer_msec.millitm;
             }
             else
             {
                 timestamp_msec = -1;
             }
+
+            /* Example of timestamp in microsecond. */
+            struct timeval timer_usec; 
+            long long int timestamp_usec; /* timestamp in microsecond */
+            if (!gettimeofday(&timer_usec, NULL)) {
+                timestamp_usec = ((long long int) timer_usec.tv_sec) * 
+                    1000000ll + (long long int) timer_usec.tv_usec;
+            }
+            else {
+                timestamp_usec = -1;
+            }
+
             log_error("timstamp %lld ms", timestamp_msec);
             if (g_spinbit == 0xff)
             {
                 g_spinbit = spin_bit;
                 g_timestamp_msec = timestamp_msec;
-                return;
+                g_timestamp_usec = timestamp_usec;
             }
             else
             {
                 if (g_spinbit != spin_bit)
                 {
                     g_spinbit = spin_bit;
-                    long long int rtt = timestamp_msec - g_timestamp_msec;
+                    long long int rtt_ms = timestamp_msec - g_timestamp_msec;
+                    long long int rtt_us = timestamp_usec - g_timestamp_usec;
                     g_timestamp_msec = timestamp_msec;
-                    log_error("rtt: %lld ms", rtt);
+                    g_timestamp_usec = timestamp_usec;
+                    log_error("rtt: %lld ms", rtt_ms);
+                    log_error("rtt: %lld us", rtt_us);
                 }
                 else
                 {
@@ -129,7 +151,7 @@ void quic_parse_header(const u_char *udp_payload, unsigned int payload_length)
         case QUIC_RETRY_PACKET:
             log_debug(" quic type: retry");
         default:
-            break;
+            return;
         }
 
         uint32_t quic_version = *(udp_payload + counter_pointer) << 24 |
