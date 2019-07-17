@@ -7,12 +7,14 @@ addons:
   apt:
     update: true
     sources:
-      - ppa:snaipewastaken/ppa
+      - ubuntu-toolchain-r-test
+      # - ppa:snaipewastaken/ppa
     packages:
+      # - criterion-dev
       - libpcap-dev
-    
+
 notifications:
   email: false
-  
+
 script:
   - make
