@@ -1,0 +1,14 @@
+dist: xenial
+language: c
+os:
+  - linux
+
+addons:
+  apt:
+    update: true
+    sources:
+      - ubuntu-toolchain-r-test
+      - ppa:snaipewastaken/ppa
+    packages:
+      - criterion-dev
+      - libpcap-dev
