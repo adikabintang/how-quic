@@ -35,14 +35,7 @@ int main(int argc, char *argv[])
             server_port = optarg;
             break;
         case '?':
-            if (optopt == 'c')
-                fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-            else if (isprint(optopt))
-                fprintf(stderr, "Unknown option '-%c'.\n", optopt);
-            else
-                fprintf(stderr,
-                        "Unknown option character `\\x%x'.\n",
-                        optopt);
+            
             return 1;
         default:
             printf("hah\n");
@@ -60,7 +53,7 @@ int main(int argc, char *argv[])
     filter.server_ip = server_ip;
     filter.server_port = server_port;
 
-    // log_set_level(4);
+    //log_set_level(4);
     // char *device = argc > 1 ? argv[1] : "lo";
     char error_buffer[PCAP_ERRBUF_SIZE];
     pcap_t *handle;

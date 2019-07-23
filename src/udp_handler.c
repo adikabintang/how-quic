@@ -5,6 +5,8 @@
 #include "log.h"
 #include "quic.h"
 
+uint32_t counter = 1;
+
 void udp_handler(
     u_char *args,
     const struct pcap_pkthdr *header,
@@ -16,9 +18,7 @@ void udp_handler(
     char timestr[16];
 
     filter_server *filter = (filter_server *)args;
-    log_debug(" server ip: %s", filter->server_ip);
-    log_debug(" server port: %s", filter->server_port);
-
+    
     struct ether_header *eth_hdr;
     ip_header *ip_hdr;
     eth_hdr = (struct ether_header *)packet;
@@ -48,31 +48,31 @@ void udp_handler(
     u_short src_port = ntohs(udp_hdr->src_port);
     u_short dst_port = ntohs(udp_hdr->dst_port);
     u_short datagram_length = ntohs(udp_hdr->len);
-
-    log_error("%d.%d.%d.%d:%d -> %d.%d.%d.%d:%d",
-        ip_hdr->saddr.byte1,
-        ip_hdr->saddr.byte2,
-        ip_hdr->saddr.byte3,
-        ip_hdr->saddr.byte4,
-        src_port,
-        ip_hdr->daddr.byte1,
-        ip_hdr->daddr.byte2,
-        ip_hdr->daddr.byte3,
-        ip_hdr->daddr.byte4,
-        dst_port);
     
     if (dst_port == 4433 || src_port == 4433)
     {
         local_tv_sec = header->ts.tv_sec;
-        log_error("%lld.%.9ld", (long long)header->ts.tv_sec, 
-            header->ts.tv_usec);
 
         /* print timestamp and length of the packet */
-        log_debug("total packet available: %d bytes", header->caplen);
-        log_debug("expected packet size: %d bytes", header->len);
+        // log_debug("total packet available: %d bytes", header->caplen);
+        // log_debug("expected packet size: %d bytes", header->len);
         
-        log_debug("real_length: %d bytes", datagram_length);
-        log_debug("udp payload_length: %d bytes", datagram_length - 8);
+        // log_debug("real_length: %d bytes", datagram_length);
+        // log_debug("udp payload_length: %d bytes", datagram_length - 8);
+        log_error("\n\n---\nPACKET: %d\n---", counter++);
+            log_error("%d.%d.%d.%d:%d -> %d.%d.%d.%d:%d",
+            ip_hdr->saddr.byte1,
+            ip_hdr->saddr.byte2,
+            ip_hdr->saddr.byte3,
+            ip_hdr->saddr.byte4,
+            src_port,
+            ip_hdr->daddr.byte1,
+            ip_hdr->daddr.byte2,
+            ip_hdr->daddr.byte3,
+            ip_hdr->daddr.byte4,
+            dst_port);
+        log_error("%lld.%.9ld", (long long)header->ts.tv_sec, 
+            header->ts.tv_usec);
         quic_parse_header(packet + ethernet_header_length 
             + ip_header_length + 8, datagram_length - 8);
     }
