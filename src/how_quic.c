@@ -1,6 +1,7 @@
 #include <stdio.h>
-#include <pcap.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <pcap.h>
 
 #include "udp_handler.h"
 #include "log.h"
@@ -51,7 +52,7 @@ int main(int argc, char *argv[])
            device, server_ip, server_port);
     
     filter.server_ip = server_ip;
-    filter.server_port = server_port;
+    filter.server_port = (u_short)strtol(server_port, NULL, 10);;
 
     //log_set_level(4);
     // char *device = argc > 1 ? argv[1] : "lo";
@@ -60,7 +61,7 @@ int main(int argc, char *argv[])
     int snapshot_length = 1024;
 
     // end the loop after this many packets are captured
-    int total_packet_count = 13;
+    int total_packet_count = 40;
 
     handle = pcap_open_live(device, snapshot_length, 0, 10000, error_buffer);
     if (handle == NULL)

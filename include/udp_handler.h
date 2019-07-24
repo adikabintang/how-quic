@@ -13,7 +13,7 @@ typedef struct ip_address {
 
 typedef struct filter_server {
     char *server_ip;
-    char *server_port;
+    u_short server_port;
 } filter_server;
 
 /* IPv4 header */

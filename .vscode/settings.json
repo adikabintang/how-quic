@@ -5,6 +5,7 @@
         "optional": "c",
         "ostream": "c",
         "system_error": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "sstream": "c"
     }
 }

@@ -49,7 +49,7 @@ void udp_handler(
     u_short dst_port = ntohs(udp_hdr->dst_port);
     u_short datagram_length = ntohs(udp_hdr->len);
     
-    if (dst_port == 4433 || src_port == 4433)
+    if (dst_port == filter->server_port || src_port == filter->server_port)
     {
         local_tv_sec = header->ts.tv_sec;
 
