@@ -3,22 +3,13 @@ language: c
 os:
   - linux
 
-addons:
-  apt:
-    update: true
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - libpcap-dev
-      - uthash-dev
-
 notifications:
   email: false
 
 before_install:
   - sudo add-apt-repository ppa:snaipewastaken/ppa -y
   - sudo apt-get update -q
-  - sudo apt-get install criterion-dev -y
+  - sudo apt-get install criterion-dev libpcap-dev uthash-dev -y
 
 script:
   - make
