@@ -28,7 +28,8 @@ typedef struct quic_conversation
 
 conversation *g_conv = NULL;
 
-void quic_measure_latency_spinbit(char *src_ip_port, char *dst_ip_port,
+void quic_measure_latency_spinbit(const struct pcap_pkthdr *header,
+                                  char *src_ip_port, char *dst_ip_port,
                                   u_char spinbit)
 {
     conversation *temp_conv;
@@ -52,12 +53,13 @@ void quic_measure_latency_spinbit(char *src_ip_port, char *dst_ip_port,
         log_debug("conversation already exists");
         if (temp_conv->last_spinbit != spinbit)
         {
-            long long current_ms = get_current_msec();
+            long long current_ms = (long long)header->ts.tv_sec * 1000 
+                + header->ts.tv_usec / 1000;
             temp_conv->rtt_ms = current_ms - temp_conv->last_timestamp_ms;
             temp_conv->last_timestamp_ms = current_ms;
             log_trace("spinning!");
             //temp_conv->rtt_us = current_us - temp_conv->last_timestamp_us;
-            
+
             //temp_conv->last_timestamp_us = current_us;
             // temp_conv->rtt_ms = temp_conv->rtt_us / 1000;
             // temp_conv->last_timestamp_ms = current_us / 1000;
@@ -78,8 +80,10 @@ void quic_measure_latency_spinbit(char *src_ip_port, char *dst_ip_port,
         temp_conv = (conversation *)malloc(sizeof(conversation));
         strcpy(temp_conv->key_src_dst_ip_port, key);
         temp_conv->last_spinbit = spinbit;
-        //temp_conv->last_timestamp_us = get_current_usec();
-        temp_conv->last_timestamp_ms = get_current_msec();
+        
+        long long current_ms = (long long)header->ts.tv_sec * 1000 
+            + header->ts.tv_usec / 1000;
+        temp_conv->last_timestamp_ms = current_ms;
         temp_conv->rtt_ms = 0;
         temp_conv->rtt_us = 0;
         HASH_ADD_STR(g_conv, key_src_dst_ip_port, temp_conv);
@@ -170,7 +174,8 @@ void quic_handle_0_rtt_or_handhsake(const u_char *udp_payload,
     *counter_pointer += var_len.value;
 }
 
-void quic_parse_header(const u_char *udp_payload, unsigned int payload_length,
+void quic_parse_header(const struct pcap_pkthdr *header,
+                       const u_char *udp_payload, unsigned int payload_length,
                        char *src_ip_port, char *dst_ip_port)
 {
     unsigned int counter_pointer = 0;
@@ -234,7 +239,7 @@ void quic_parse_header(const u_char *udp_payload, unsigned int payload_length,
         else
         {
             u_char spinbit = (header_format & 0x20) >> 5;
-            quic_measure_latency_spinbit(src_ip_port, dst_ip_port, spinbit);
+            quic_measure_latency_spinbit(header, src_ip_port, dst_ip_port, spinbit);
             return;
         }
     }

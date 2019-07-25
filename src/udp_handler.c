@@ -78,7 +78,7 @@ void udp_handler(
 
         log_debug("%lld.%.6ld", (long long)header->ts.tv_sec, 
             header->ts.tv_usec);
-        quic_parse_header(packet + ethernet_header_length 
+        quic_parse_header(header, packet + ethernet_header_length 
             + ip_header_length + 8, datagram_length - 8, src_ip_port, 
             dst_ip_port);
     }
