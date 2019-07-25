@@ -54,23 +54,22 @@ int main(int argc, char *argv[])
     filter.server_ip = server_ip;
     filter.server_port = (u_short)strtol(server_port, NULL, 10);;
 
-    //log_set_level(4);
-    // char *device = argc > 1 ? argv[1] : "lo";
+    log_set_level(LOG_DEBUG);
+    
     char error_buffer[PCAP_ERRBUF_SIZE];
     pcap_t *handle;
     int snapshot_length = 1024;
 
     // end the loop after this many packets are captured
-    int total_packet_count = 40;
+    int total_packet_count = 0; //40; // 0 for unlimited
 
-    handle = pcap_open_live(device, snapshot_length, 0, 10000, error_buffer);
+    handle = pcap_open_live(device, snapshot_length, 0, 3000, error_buffer);
     if (handle == NULL)
     {
         log_fatal("could not open device %s: %s", device, error_buffer);
         return 2;
     }
 
-    // pcap_loop(handle, total_packet_count, udp_handler, NULL);
     pcap_loop(handle, total_packet_count, udp_handler, (u_char*)&filter);
     return 0;
 }

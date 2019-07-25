@@ -11,7 +11,7 @@ typedef struct decode_var_len_data {
 
 // https://tools.ietf.org/html/draft-ietf-quic-transport-20#section-16
 decode_var_len_data quic_decode_var_len_int(u_char *header_field);
-void quic_parse_header(const u_char *udp_payload, unsigned int payload_length);
-
+void quic_parse_header(const u_char *udp_payload, unsigned int payload_length,
+    char *src_ip_port, char *dst_ip_port);
 
 #endif

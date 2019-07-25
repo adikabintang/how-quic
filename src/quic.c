@@ -1,10 +1,13 @@
 #include "quic.h"
-#include "log.h"
+#include <string.h>
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
-#include <time.h>      /* time_t, time (for timestamp in second) */
-#include <sys/timeb.h> /* ftime, timeb (for timestamp in millisecond) */
-#include <sys/time.h>   // gettimeofday, timeval (for timestamp in microsecond)
+#include <time.h>
+#include <sys/timeb.h>
+#include <sys/time.h>
+#include "log.h"
+#include "uthash.h"
+#include "util.h"
 
 #define QUIC_INITIAL_PACKET 0x0
 #define QUIC_ZERO_RTT_PACKET 0x1
@@ -12,9 +15,76 @@
 #define QUIC_RETRY_PACKET 0x3
 #define QUIC_LONG_HEADER_FORMAT 0x80
 
+typedef struct quic_conversation
+{
+    char key_src_dst_ip_port[43]; /* key format: ip:portip:port, not srcdestination */
+    u_char last_spinbit;          // 0xff means it's just initialized
+    long long int last_timestamp_ms;
+    long long int last_timestamp_us;
+    long long int rtt_ms;
+    long long int rtt_us;
+    UT_hash_handle hh; /* makes this structure hashable */
+} conversation;
+
 u_char g_spinbit = 0xff;
 long long int g_timestamp_msec;
 long long int g_timestamp_usec;
+
+conversation *g_conv = NULL;
+
+void quic_measure_latency_spinbit(char *src_ip_port, char *dst_ip_port, 
+    u_char spinbit)
+{
+    conversation *temp_conv;
+    char key[43] = "";
+    if (strcmp(src_ip_port, dst_ip_port) < 0)
+    {
+        strcpy(key, src_ip_port);
+        strcat(key, dst_ip_port);
+    }
+    else
+    {
+        strcpy(key, dst_ip_port);
+        strcat(key, src_ip_port);
+    }
+
+    log_trace("key: %s", key);
+    log_trace(" spinbit: %d", spinbit);
+    HASH_FIND_STR(g_conv, key, temp_conv);
+    if (temp_conv)
+    {
+        log_debug("conversation already exists");
+        if (temp_conv->last_spinbit != spinbit)
+        {
+            long long int current_us = get_current_usec();
+            log_trace("spinning!");
+            temp_conv->rtt_us = current_us - temp_conv->last_timestamp_us;
+            temp_conv->last_timestamp_us = current_us;
+            temp_conv->rtt_ms = temp_conv->rtt_us / 1000;
+            temp_conv->last_timestamp_ms = current_us / 1000;
+            temp_conv->last_spinbit = spinbit;
+            log_info("rtt: %lld us", temp_conv->rtt_us);
+            log_info("rtt: %lld ms", temp_conv->rtt_ms);
+            log_info("---\n");
+        }
+        else
+        {
+            log_trace("same spin bit");
+        }
+    }
+    else
+    {
+        log_trace("conversation does NOT exist, creating a new one...");
+        temp_conv = (conversation *)malloc(sizeof(conversation));
+        strcpy(temp_conv->key_src_dst_ip_port, key);
+        temp_conv->last_spinbit = spinbit;
+        temp_conv->last_timestamp_us = get_current_usec();
+        temp_conv->last_timestamp_ms = temp_conv->last_timestamp_us / 1000;
+        temp_conv->rtt_ms = 0;
+        temp_conv->rtt_us = 0;
+        HASH_ADD_STR(g_conv, key_src_dst_ip_port, temp_conv);
+    }
+}
 
 decode_var_len_data quic_decode_var_len_int(u_char *header_field)
 {
@@ -61,16 +131,16 @@ decode_var_len_data quic_decode_var_len_int(u_char *header_field)
     return result;
 }
 
-void handle_initial_packet(const u_char *udp_payload, 
-    unsigned int payload_length, unsigned int *counter_pointer)
-{   
+void quic_handle_initial_packet(const u_char *udp_payload,
+                                unsigned int payload_length, unsigned int *counter_pointer)
+{
     u_char *token_length_hdr = (u_char *)udp_payload + *counter_pointer;
     (*counter_pointer)++;
     decode_var_len_data var_len = quic_decode_var_len_int(token_length_hdr);
 
     *counter_pointer += ((var_len.excessive_usable_bit - 6) / 8);
 
-    // go through the token
+    // skip the token
     *counter_pointer += var_len.value;
 
     u_char *length_hdr = (u_char *)udp_payload + *counter_pointer;
@@ -82,8 +152,8 @@ void handle_initial_packet(const u_char *udp_payload,
     *counter_pointer += var_len.value;
 }
 
-void handle_0_rtt_or_handhsake(const u_char *udp_payload, 
-    unsigned int payload_length, unsigned int *counter_pointer)
+void quic_handle_0_rtt_or_handhsake(const u_char *udp_payload,
+                                    unsigned int payload_length, unsigned int *counter_pointer)
 {
     decode_var_len_data var_len;
     u_char *length_hdr = (u_char *)udp_payload + *counter_pointer;
@@ -95,128 +165,72 @@ void handle_0_rtt_or_handhsake(const u_char *udp_payload,
     *counter_pointer += var_len.value;
 }
 
-void measure_latency_spinbit(u_char header_format)
-{
-    log_debug("quic SHORT header");
-    u_char spin_bit = (header_format & 0x20) >> 5;
-    log_debug(" spinbit: %d", spin_bit);
-    struct timeb timer_msec;
-    long long int timestamp_msec; /* timestamp in millisecond. */
-    if (!ftime(&timer_msec))
-    {
-        timestamp_msec = ((long long int)timer_msec.time) * 1000ll +
-            (long long int)timer_msec.millitm;
-    }
-    else
-    {
-        timestamp_msec = -1;
-    }
-
-    /* Example of timestamp in microsecond. */
-    struct timeval timer_usec; 
-    long long int timestamp_usec; /* timestamp in microsecond */
-    if (!gettimeofday(&timer_usec, NULL)) {
-        timestamp_usec = ((long long int) timer_usec.tv_sec) * 
-            1000000ll + (long long int) timer_usec.tv_usec;
-    }
-    else {
-        timestamp_usec = -1;
-    }
-
-    log_debug("timstamp %lld ms", timestamp_msec);
-    if (g_spinbit == 0xff)
-    {
-        g_spinbit = spin_bit;
-        g_timestamp_msec = timestamp_msec;
-        g_timestamp_usec = timestamp_usec;
-    }
-    else
-    {
-        if (g_spinbit != spin_bit)
-        {
-            g_spinbit = spin_bit;
-            long long int rtt_ms = timestamp_msec - g_timestamp_msec;
-            long long int rtt_us = timestamp_usec - g_timestamp_usec;
-            g_timestamp_msec = timestamp_msec;
-            g_timestamp_usec = timestamp_usec;
-            log_info("rtt: %lld ms", rtt_ms);
-            log_info("rtt: %lld us", rtt_us);
-        }
-        else
-        {
-            log_debug("same spinbit");
-        }
-    }
-    log_info("---\n");
-    // TODO
-    return;
-}
-
-void quic_parse_header(const u_char *udp_payload, unsigned int payload_length)
+void quic_parse_header(const u_char *udp_payload, unsigned int payload_length,
+    char *src_ip_port, char *dst_ip_port)
 {
     unsigned int counter_pointer = 0;
     unsigned int i;
     u_char long_or_short_header;
 
-    while (counter_pointer < payload_length) {
+    while (counter_pointer < payload_length)
+    {
         u_char header_format = *(udp_payload + counter_pointer);
         counter_pointer++;
-        
+
         long_or_short_header = header_format & 0x80;
 
-        if (long_or_short_header == QUIC_LONG_HEADER_FORMAT) {
+        if (long_or_short_header == QUIC_LONG_HEADER_FORMAT)
+        {
             u_char long_packet_type = (header_format & 0x30) >> 4;
 
             // TODO: this looks worrying because of the endianness problem
+            // but only affects the quic version printing, 
+            // not the rtt measurement
             uint32_t quic_version = *(udp_payload + counter_pointer) << 24 |
                                     *(udp_payload + counter_pointer + 1) << 16 |
                                     *(udp_payload + counter_pointer + 2) << 8 |
                                     *(udp_payload + counter_pointer + 3);
 
-            log_debug(" quic ver: %x", quic_version);
+            log_trace(" quic ver: %x", quic_version);
             counter_pointer += sizeof(uint32_t);
 
             u_char dcid_len = *(udp_payload + counter_pointer);
             counter_pointer++;
-            
+
             // skipping dcid
             counter_pointer += dcid_len;
 
             u_char scid_len = *(udp_payload + counter_pointer);
             counter_pointer++;
-            
+
             // skipping scid
             counter_pointer += scid_len;
 
             switch (long_packet_type)
             {
             case QUIC_INITIAL_PACKET:
-                log_debug(" quic type: initial");
-                handle_initial_packet(udp_payload, payload_length, 
-                    &counter_pointer);
+                log_trace(" quic type: initial");
+                quic_handle_initial_packet(udp_payload, payload_length,
+                                           &counter_pointer);
                 break;
             case QUIC_ZERO_RTT_PACKET:
-                log_debug(" quic type: 0-RTT");
-                handle_0_rtt_or_handhsake(udp_payload, payload_length, 
-                    &counter_pointer);
-                break;
             case QUIC_HANDSHAKE_PACKET:
-                log_debug(" quic type: handshake");
-                handle_0_rtt_or_handhsake(udp_payload, payload_length, 
-                    &counter_pointer);
+                log_trace(" quic type: handshake or 0-RTT");
+                quic_handle_0_rtt_or_handhsake(udp_payload, payload_length,
+                                               &counter_pointer);
                 break;
             case QUIC_RETRY_PACKET:
-                log_debug(" quic type: retry");
+                log_trace(" quic type: retry");
                 return;
             default:
                 return;
             }
-        } 
+        }
         else
         {
-            measure_latency_spinbit(header_format);
+            u_char spinbit = (header_format & 0x20) >> 5;
+            quic_measure_latency_spinbit(src_ip_port, dst_ip_port, spinbit);
             return;
         }
     }
 }
-

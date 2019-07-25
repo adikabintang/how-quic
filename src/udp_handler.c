@@ -23,7 +23,7 @@ void udp_handler(
     ip_header *ip_hdr;
     eth_hdr = (struct ether_header *)packet;
     if (ntohs(eth_hdr->ether_type) != ETHERTYPE_IP) {
-        log_debug("not an ip packet, skipping");
+        log_trace("not an ip packet, skipping");
         return;
     }
 
@@ -38,7 +38,7 @@ void udp_handler(
 
     //u_char protocol = (ip_hdr + 9);
     if (ip_hdr->proto != IPPROTO_UDP) {
-        log_debug("not a udp packet, return");
+        log_trace("not a udp packet, return");
         return;
     }
 
@@ -54,26 +54,34 @@ void udp_handler(
         local_tv_sec = header->ts.tv_sec;
 
         /* print timestamp and length of the packet */
-        // log_debug("total packet available: %d bytes", header->caplen);
-        // log_debug("expected packet size: %d bytes", header->len);
+        log_trace("total packet available: %d bytes", header->caplen);
+        log_trace("expected packet size: %d bytes", header->len);
         
-        // log_debug("real_length: %d bytes", datagram_length);
-        // log_debug("udp payload_length: %d bytes", datagram_length - 8);
-        log_error("\n\n---\nPACKET: %d\n---", counter++);
-            log_error("%d.%d.%d.%d:%d -> %d.%d.%d.%d:%d",
+        log_trace("real_length: %d bytes", datagram_length);
+        log_trace("udp payload_length: %d bytes", datagram_length - 8);
+        log_debug("\n\n---\nPACKET: %d\n---", counter++);
+        char src_ip_port[22]; // format: xxx.xxx.xxx.xxx:xxxxx
+        char dst_ip_port[22];
+        snprintf(src_ip_port, 22, "%d.%d.%d.%d:%d", 
             ip_hdr->saddr.byte1,
             ip_hdr->saddr.byte2,
             ip_hdr->saddr.byte3,
             ip_hdr->saddr.byte4,
-            src_port,
+            src_port);
+        
+        snprintf(dst_ip_port, 22, "%d.%d.%d.%d:%d", 
             ip_hdr->daddr.byte1,
             ip_hdr->daddr.byte2,
             ip_hdr->daddr.byte3,
             ip_hdr->daddr.byte4,
             dst_port);
-        log_error("%lld.%.9ld", (long long)header->ts.tv_sec, 
+        
+        log_debug("%s -> %s", src_ip_port, dst_ip_port);
+
+        log_debug("%lld.%.6ld", (long long)header->ts.tv_sec, 
             header->ts.tv_usec);
         quic_parse_header(packet + ethernet_header_length 
-            + ip_header_length + 8, datagram_length - 8);
+            + ip_header_length + 8, datagram_length - 8, src_ip_port, 
+            dst_ip_port);
     }
 }

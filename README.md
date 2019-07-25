@@ -17,3 +17,4 @@ Dependencies:
 1. [libpcap](https://www.tcpdump.org/)
 2. [log.c](https://github.com/rxi/log.c)
 3. [Criterion unit test](https://github.com/Snaipe/Criterion)
+4. [uthash](https://troydhanson.github.io/uthash/)
