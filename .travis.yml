@@ -12,6 +12,7 @@ addons:
     packages:
       # - criterion-dev
       - libpcap-dev
+      - uthash-dev
 
 notifications:
   email: false
