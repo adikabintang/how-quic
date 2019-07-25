@@ -26,22 +26,28 @@ typedef struct quic_conversation
 
 conversation *g_conv = NULL;
 
+void create_conv_key(char *dest, char *src_ip_port, char *dst_ip_port)
+{
+    if (strcmp(src_ip_port, dst_ip_port) < 0)
+    {
+        strcpy(dest, src_ip_port);
+        strcat(dest, dst_ip_port);
+    }
+    else
+    {
+        strcpy(dest, dst_ip_port);
+        strcat(dest, src_ip_port);
+    }
+}
+
 void quic_measure_latency_spinbit(const struct pcap_pkthdr *header,
                                   char *src_ip_port, char *dst_ip_port,
                                   u_char spinbit)
 {
     conversation *temp_conv;
     char key[43] = "";
-    if (strcmp(src_ip_port, dst_ip_port) < 0)
-    {
-        strcpy(key, src_ip_port);
-        strcat(key, dst_ip_port);
-    }
-    else
-    {
-        strcpy(key, dst_ip_port);
-        strcat(key, src_ip_port);
-    }
+
+    create_conv_key(key, src_ip_port, dst_ip_port);
 
     log_trace("key: %s", key);
     log_trace(" spinbit: %d", spinbit);
@@ -51,8 +57,7 @@ void quic_measure_latency_spinbit(const struct pcap_pkthdr *header,
         log_debug("conversation already exists");
         if (temp_conv->last_spinbit != spinbit)
         {
-            long long current_ms = (long long)header->ts.tv_sec * 1000 
-                + header->ts.tv_usec / 1000;
+            long long current_ms = (long long)header->ts.tv_sec * 1000 + header->ts.tv_usec / 1000;
             temp_conv->rtt_ms = current_ms - temp_conv->last_timestamp_ms;
             temp_conv->last_timestamp_ms = current_ms;
             temp_conv->last_spinbit = spinbit;
@@ -72,8 +77,7 @@ void quic_measure_latency_spinbit(const struct pcap_pkthdr *header,
         temp_conv = (conversation *)malloc(sizeof(conversation));
         strcpy(temp_conv->key_src_dst_ip_port, key);
         temp_conv->last_spinbit = spinbit;
-        long long current_ms = (long long)header->ts.tv_sec * 1000 
-            + header->ts.tv_usec / 1000;
+        long long current_ms = (long long)header->ts.tv_sec * 1000 + header->ts.tv_usec / 1000;
         temp_conv->last_timestamp_ms = current_ms;
         temp_conv->rtt_ms = 0;
         HASH_ADD_STR(g_conv, key_src_dst_ip_port, temp_conv);
@@ -148,6 +152,8 @@ void quic_handle_initial_packet(const u_char *udp_payload,
     *counter_pointer += ((var_len.excessive_usable_bit - 6) / 8);
 
     *counter_pointer += var_len.value;
+
+    //HASH_FIND_STR( users, "betty", s);
 }
 
 void quic_handle_0_rtt_or_handhsake(const u_char *udp_payload,
