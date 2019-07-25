@@ -9,9 +9,9 @@
 void help()
 {
     printf("usage:\n");
-    printf("./how-quic -i interface -s server_ip -p server_port\n\n");
+    printf("./how-quic -i interface -p server_port\n\n");
     printf("example:\n");
-    printf("./how-quic -i lo -s 192.168.1.101 -p 443\n");
+    printf("./how-quic -i lo -p 443\n");
 }
 
 int main(int argc, char *argv[])
@@ -29,9 +29,6 @@ int main(int argc, char *argv[])
         case 'i':
             device = optarg;
             break;
-        case 's':
-            server_ip = optarg;
-            break;
         case 'p':
             server_port = optarg;
             break;
@@ -48,10 +45,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    log_info("interface = %s, server ip = %s, server port = %s\n",
-           device, server_ip, server_port);
+    log_info("interface = %s, server port = %s\n",
+           device, server_port);
     
-    filter.server_ip = server_ip;
     filter.server_port = (u_short)strtol(server_port, NULL, 10);;
 
 #if defined _DEBUG

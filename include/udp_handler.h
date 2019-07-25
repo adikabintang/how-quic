@@ -12,7 +12,6 @@ typedef struct ip_address {
 } ip_address;
 
 typedef struct filter_server {
-    char *server_ip;
     u_short server_port;
 } filter_server;
 

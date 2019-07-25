@@ -59,7 +59,7 @@ void quic_measure_latency_spinbit(char *src_ip_port, char *dst_ip_port,
             temp_conv->rtt_ms = temp_conv->rtt_us / 1000;
             temp_conv->last_timestamp_ms = current_us / 1000;
             temp_conv->last_spinbit = spinbit;
-            log_info("%s -> %s", src_ip_port, dst_ip_port);
+            log_info("%s <-> %s", src_ip_port, dst_ip_port);
             log_info("rtt: %lld us", temp_conv->rtt_us);
             log_info("rtt: %lld ms", temp_conv->rtt_ms);
             log_info("---\n");
