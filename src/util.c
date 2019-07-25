@@ -1,28 +1,23 @@
 #include "util.h"
 
-long long int get_current_msec()
+long long get_current_msec()
 {
-    long long int timestamp_msec;
-    struct timeb timer_msec;
+    struct timeval tv;
 
-    if (!ftime(&timer_msec))
-    {
-        timestamp_msec = ((long long int)timer_msec.time) * 1000ll +
-                         (long long int)timer_msec.millitm;
-    }
-    else
-    {
-        timestamp_msec = -1;
-    }
+    gettimeofday(&tv, NULL);
 
-    return timestamp_msec;
+    long long current_ms =
+        (long long)(tv.tv_sec) * 1000 +
+        (long long)(tv.tv_usec) / 1000;
+
+    return current_ms;
 }
 
-long long int get_current_usec()
+long long get_current_usec()
 {
     struct timeval timer_usec;
     long long int timestamp_usec;
-    
+
     if (!gettimeofday(&timer_usec, NULL))
     {
         timestamp_usec = ((long long int)timer_usec.tv_sec) *

@@ -5,7 +5,7 @@
 #include <sys/timeb.h>
 #include <sys/time.h>
 
-long long int get_current_msec();
-long long int get_current_usec();
+long long get_current_msec();
+long long get_current_usec();
 
 #endif

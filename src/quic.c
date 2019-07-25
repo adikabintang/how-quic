@@ -19,10 +19,10 @@ typedef struct quic_conversation
 {
     char key_src_dst_ip_port[43]; /* key format: ip:portip:port, not srcdestination */
     u_char last_spinbit;
-    long long int last_timestamp_ms;
-    long long int last_timestamp_us;
-    long long int rtt_ms;
-    long long int rtt_us;
+    long long last_timestamp_ms;
+    long long last_timestamp_us;
+    long long rtt_ms;
+    long long rtt_us;
     UT_hash_handle hh; /* makes this structure hashable */
 } conversation;
 
@@ -52,12 +52,15 @@ void quic_measure_latency_spinbit(char *src_ip_port, char *dst_ip_port,
         log_debug("conversation already exists");
         if (temp_conv->last_spinbit != spinbit)
         {
-            long long int current_us = get_current_usec();
+            long long current_ms = get_current_msec();
+            temp_conv->rtt_ms = current_ms - temp_conv->last_timestamp_ms;
+            temp_conv->last_timestamp_ms = current_ms;
             log_trace("spinning!");
-            temp_conv->rtt_us = current_us - temp_conv->last_timestamp_us;
-            temp_conv->last_timestamp_us = current_us;
-            temp_conv->rtt_ms = temp_conv->rtt_us / 1000;
-            temp_conv->last_timestamp_ms = current_us / 1000;
+            //temp_conv->rtt_us = current_us - temp_conv->last_timestamp_us;
+            
+            //temp_conv->last_timestamp_us = current_us;
+            // temp_conv->rtt_ms = temp_conv->rtt_us / 1000;
+            // temp_conv->last_timestamp_ms = current_us / 1000;
             temp_conv->last_spinbit = spinbit;
             log_info("%s <-> %s", src_ip_port, dst_ip_port);
             log_info("rtt: %lld us", temp_conv->rtt_us);
@@ -75,8 +78,8 @@ void quic_measure_latency_spinbit(char *src_ip_port, char *dst_ip_port,
         temp_conv = (conversation *)malloc(sizeof(conversation));
         strcpy(temp_conv->key_src_dst_ip_port, key);
         temp_conv->last_spinbit = spinbit;
-        temp_conv->last_timestamp_us = get_current_usec();
-        temp_conv->last_timestamp_ms = temp_conv->last_timestamp_us / 1000;
+        //temp_conv->last_timestamp_us = get_current_usec();
+        temp_conv->last_timestamp_ms = get_current_msec();
         temp_conv->rtt_ms = 0;
         temp_conv->rtt_us = 0;
         HASH_ADD_STR(g_conv, key_src_dst_ip_port, temp_conv);
