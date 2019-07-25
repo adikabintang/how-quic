@@ -75,8 +75,6 @@ void udp_handler(
             ip_hdr->daddr.byte3,
             ip_hdr->daddr.byte4,
             dst_port);
-        
-        log_debug("%s -> %s", src_ip_port, dst_ip_port);
 
         log_debug("%lld.%.6ld", (long long)header->ts.tv_sec, 
             header->ts.tv_usec);

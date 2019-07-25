@@ -7,6 +7,9 @@
         "system_error": "c",
         "type_traits": "c",
         "sstream": "c",
-        "timeb.h": "c"
+        "timeb.h": "c",
+        "uthash.h": "c",
+        "log.h": "c",
+        "time.h": "c"
     }
 }

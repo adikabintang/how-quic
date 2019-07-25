@@ -54,8 +54,14 @@ int main(int argc, char *argv[])
     filter.server_ip = server_ip;
     filter.server_port = (u_short)strtol(server_port, NULL, 10);;
 
+#if defined _DEBUG
     log_set_level(LOG_DEBUG);
-    
+#elif defined _TRACE
+    log_set_level(LOG_TRACE);
+#else
+    log_set_level(LOG_INFO);
+#endif
+
     char error_buffer[PCAP_ERRBUF_SIZE];
     pcap_t *handle;
     int snapshot_length = 1024;

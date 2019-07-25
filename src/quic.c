@@ -18,7 +18,7 @@
 typedef struct quic_conversation
 {
     char key_src_dst_ip_port[43]; /* key format: ip:portip:port, not srcdestination */
-    u_char last_spinbit;          // 0xff means it's just initialized
+    u_char last_spinbit;
     long long int last_timestamp_ms;
     long long int last_timestamp_us;
     long long int rtt_ms;
@@ -26,14 +26,10 @@ typedef struct quic_conversation
     UT_hash_handle hh; /* makes this structure hashable */
 } conversation;
 
-u_char g_spinbit = 0xff;
-long long int g_timestamp_msec;
-long long int g_timestamp_usec;
-
 conversation *g_conv = NULL;
 
-void quic_measure_latency_spinbit(char *src_ip_port, char *dst_ip_port, 
-    u_char spinbit)
+void quic_measure_latency_spinbit(char *src_ip_port, char *dst_ip_port,
+                                  u_char spinbit)
 {
     conversation *temp_conv;
     char key[43] = "";
@@ -63,6 +59,7 @@ void quic_measure_latency_spinbit(char *src_ip_port, char *dst_ip_port,
             temp_conv->rtt_ms = temp_conv->rtt_us / 1000;
             temp_conv->last_timestamp_ms = current_us / 1000;
             temp_conv->last_spinbit = spinbit;
+            log_info("%s -> %s", src_ip_port, dst_ip_port);
             log_info("rtt: %lld us", temp_conv->rtt_us);
             log_info("rtt: %lld ms", temp_conv->rtt_ms);
             log_info("---\n");
@@ -86,6 +83,9 @@ void quic_measure_latency_spinbit(char *src_ip_port, char *dst_ip_port,
     }
 }
 
+/**
+ * https://tools.ietf.org/html/draft-ietf-quic-transport-22#section-16
+ */
 decode_var_len_data quic_decode_var_len_int(u_char *header_field)
 {
     uint8_t var_len = 0;
@@ -132,7 +132,8 @@ decode_var_len_data quic_decode_var_len_int(u_char *header_field)
 }
 
 void quic_handle_initial_packet(const u_char *udp_payload,
-                                unsigned int payload_length, unsigned int *counter_pointer)
+                                unsigned int payload_length,
+                                unsigned int *counter_pointer)
 {
     u_char *token_length_hdr = (u_char *)udp_payload + *counter_pointer;
     (*counter_pointer)++;
@@ -153,7 +154,8 @@ void quic_handle_initial_packet(const u_char *udp_payload,
 }
 
 void quic_handle_0_rtt_or_handhsake(const u_char *udp_payload,
-                                    unsigned int payload_length, unsigned int *counter_pointer)
+                                    unsigned int payload_length,
+                                    unsigned int *counter_pointer)
 {
     decode_var_len_data var_len;
     u_char *length_hdr = (u_char *)udp_payload + *counter_pointer;
@@ -166,7 +168,7 @@ void quic_handle_0_rtt_or_handhsake(const u_char *udp_payload,
 }
 
 void quic_parse_header(const u_char *udp_payload, unsigned int payload_length,
-    char *src_ip_port, char *dst_ip_port)
+                       char *src_ip_port, char *dst_ip_port)
 {
     unsigned int counter_pointer = 0;
     unsigned int i;
@@ -184,7 +186,7 @@ void quic_parse_header(const u_char *udp_payload, unsigned int payload_length,
             u_char long_packet_type = (header_format & 0x30) >> 4;
 
             // TODO: this looks worrying because of the endianness problem
-            // but only affects the quic version printing, 
+            // but only affects the quic version printing,
             // not the rtt measurement
             uint32_t quic_version = *(udp_payload + counter_pointer) << 24 |
                                     *(udp_payload + counter_pointer + 1) << 16 |
