@@ -1,4 +1,4 @@
-dist: xenial
+dist: bionic
 language: c
 os:
   - linux
@@ -8,14 +8,20 @@ addons:
     update: true
     sources:
       - ubuntu-toolchain-r-test
-      # - ppa:snaipewastaken/ppa
     packages:
-      # - criterion-dev
       - libpcap-dev
       - uthash-dev
 
 notifications:
   email: false
 
+before_install:
+  - sudo add-apt-repository ppa:snaipewastaken/ppa -y
+  - sudo apt-get update -q
+  - sudo apt-get install criterion-dev -y
+
 script:
   - make
+
+after_install:
+  - cd test && make && quic_test.out
