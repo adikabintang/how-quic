@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
             //return;
         }
 
-    if (argc < 6) {
+    if (argc < 5) {
         help();
         return 1;
     }
