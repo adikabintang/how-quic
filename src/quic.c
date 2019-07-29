@@ -17,7 +17,7 @@
 
 typedef struct quic_conversation
 {
-    char key_src_dst_ip_port[43]; /* key format: ip:portip:port, not srcdestination */
+    char key_src_dst_ip_port[43]; /* key format: ip:portip:port sorted string */
     u_char last_spinbit;
     long long last_timestamp_ms;
     long long rtt_ms;
@@ -57,7 +57,8 @@ void quic_measure_latency_spinbit(const struct pcap_pkthdr *header,
         log_debug("conversation already exists");
         if (temp_conv->last_spinbit != spinbit)
         {
-            long long current_ms = (long long)header->ts.tv_sec * 1000 + header->ts.tv_usec / 1000;
+            long long current_ms = (long long)header->ts.tv_sec * 1000 
+                + header->ts.tv_usec / 1000;
             temp_conv->rtt_ms = current_ms - temp_conv->last_timestamp_ms;
             temp_conv->last_timestamp_ms = current_ms;
             temp_conv->last_spinbit = spinbit;
@@ -77,7 +78,8 @@ void quic_measure_latency_spinbit(const struct pcap_pkthdr *header,
         temp_conv = (conversation *)malloc(sizeof(conversation));
         strcpy(temp_conv->key_src_dst_ip_port, key);
         temp_conv->last_spinbit = spinbit;
-        long long current_ms = (long long)header->ts.tv_sec * 1000 + header->ts.tv_usec / 1000;
+        long long current_ms = (long long)header->ts.tv_sec * 1000 
+            + header->ts.tv_usec / 1000;
         temp_conv->last_timestamp_ms = current_ms;
         temp_conv->rtt_ms = 0;
         HASH_ADD_STR(g_conv, key_src_dst_ip_port, temp_conv);
@@ -99,23 +101,21 @@ decode_var_len_data quic_decode_var_len_int(u_char *header_field)
     {
     case 0b00:
         usable_bit = 6;
-        result.excessive_usable_bit = 6;
         break;
     case 0b01:
         usable_bit = 14;
-        result.excessive_usable_bit = 14;
         break;
     case 0b10:
         usable_bit = 30;
-        result.excessive_usable_bit = 30;
         break;
     case 0b11:
         usable_bit = 62;
-        result.excessive_usable_bit = 62;
         break;
     default:
         break;
     }
+
+    result.excessive_usable_bit = usable_bit;
 
     u_char *hdr_pointer = header_field;
     value = *hdr_pointer & 0b00111111;
@@ -152,8 +152,6 @@ void quic_handle_initial_packet(const u_char *udp_payload,
     *counter_pointer += ((var_len.excessive_usable_bit - 6) / 8);
 
     *counter_pointer += var_len.value;
-
-    //HASH_FIND_STR( users, "betty", s);
 }
 
 void quic_handle_0_rtt_or_handhsake(const u_char *udp_payload,
@@ -215,18 +213,18 @@ void quic_parse_header(const struct pcap_pkthdr *header,
             switch (long_packet_type)
             {
             case QUIC_INITIAL_PACKET:
-                log_trace(" quic type: initial");
+                log_trace("quic type: initial");
                 quic_handle_initial_packet(udp_payload, payload_length,
                                            &counter_pointer);
                 break;
             case QUIC_ZERO_RTT_PACKET:
             case QUIC_HANDSHAKE_PACKET:
-                log_trace(" quic type: handshake or 0-RTT");
+                log_trace("quic type: handshake or 0-RTT");
                 quic_handle_0_rtt_or_handhsake(udp_payload, payload_length,
                                                &counter_pointer);
                 break;
             case QUIC_RETRY_PACKET:
-                log_trace(" quic type: retry");
+                log_trace("quic type: retry");
                 return;
             default:
                 return;
@@ -235,7 +233,8 @@ void quic_parse_header(const struct pcap_pkthdr *header,
         else
         {
             u_char spinbit = (header_format & 0x20) >> 5;
-            quic_measure_latency_spinbit(header, src_ip_port, dst_ip_port, spinbit);
+            quic_measure_latency_spinbit(header, src_ip_port, dst_ip_port, 
+                spinbit);
             return;
         }
     }
