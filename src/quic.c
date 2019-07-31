@@ -7,7 +7,6 @@
 #include <sys/time.h>
 #include "log.h"
 #include "uthash.h"
-#include "util.h"
 
 #define QUIC_INITIAL_PACKET 0x0
 #define QUIC_ZERO_RTT_PACKET 0x1
@@ -15,9 +14,11 @@
 #define QUIC_RETRY_PACKET 0x3
 #define QUIC_LONG_HEADER_FORMAT 0x80
 
+#define HOW_QUIC_CONV_KEY_LEN 43
+
 typedef struct quic_conversation
 {
-    char key_src_dst_ip_port[43]; /* key format: ip:portip:port sorted string */
+    char key_src_dst_ip_port[HOW_QUIC_CONV_KEY_LEN]; /* key format: ip:portip:port sorted string */
     u_char last_spinbit;
     long long last_timestamp_ms;
     long long rtt_ms;
@@ -45,7 +46,7 @@ void quic_measure_latency_spinbit(const struct pcap_pkthdr *header,
                                   u_char spinbit)
 {
     conversation *temp_conv;
-    char key[43] = "";
+    char key[HOW_QUIC_CONV_KEY_LEN] = "";
 
     create_conv_key(key, src_ip_port, dst_ip_port);
 
