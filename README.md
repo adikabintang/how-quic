@@ -1,6 +1,7 @@
 # how-quic
 
 [![Build Status](https://travis-ci.org/adikabintang/how-quic.svg?branch=master)](https://travis-ci.org/adikabintang/how-quic)
+[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/adikabintang/how-quic.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/adikabintang/how-quic/context:cpp)
 
 ![how-quic](pictures/sample.png)
 
