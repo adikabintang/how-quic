@@ -5,10 +5,7 @@
 
 #include "udp_handler.h"
 #include "log.h"
-// https://github.com/cesanta/frozen
-// https://raw.githubusercontent.com/dermesser/libsocket/master/examples/transmission_client.c
-// docker run -p 5170:5170 -v $PWD/fluentbit:/fluent-bit/etc/ fluent/fluent-bit:latest
-// /home/adikabintang/junk/code/main.c
+ 
 void help()
 {
     printf("usage:\n");
