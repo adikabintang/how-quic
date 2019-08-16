@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     log_info("interface = %s, server port = %s\n",
            device, server_port);
     
-    filter.server_port = (u_short)strtol(server_port, NULL, 10);;
+    filter.server_port = (u_short)strtol(server_port, NULL, 10);
 
 #if defined _DEBUG
     log_set_level(LOG_DEBUG);
